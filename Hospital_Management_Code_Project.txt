@@ -1,0 +1,270 @@
+#include <iostream>
+#include <vector>
+#include <map>
+#include <fstream>
+using namespace std;
+
+int pi = 1001;
+
+class Person {
+public:
+    int age;
+    string name;
+    string gender;
+
+    // Constructor for Person
+    Person(string name, int age, string gender) {
+        this->name = name;
+        this->age = age;
+        this->gender = gender;
+    }
+};
+
+class Doctor : public Person {
+public:
+    string licenseNumber;
+    string specialization;
+
+    Doctor(string name, string specialization, string licenseNumber, int age, string gender)
+        : Person(name, age, gender) {
+        this->specialization = specialization;
+        this->licenseNumber = licenseNumber;
+    }
+};
+
+class Patient : public Person {
+public:
+    int patientID;
+    string disease;
+
+    Patient(int pi, string n, string dis, string g, int a)
+        : Person(n, a, g) {
+        patientID = pi;
+        disease = dis;
+    }
+};
+
+map<string, Doctor*> doctors;
+map<int, Patient*> patients;
+map<Patient*, string> app; // doctor, patient, time;
+map<Doctor*, vector<Patient*>> docapp;
+
+class HospitalManagementSystem {
+public:
+
+    void addDoctor() {
+        string name;
+        string gender;
+        int age;
+        string licenseNumber;
+        string specialization;
+
+        cout << "Enter Doctor's Name : ";
+        cin >> name;
+        cout << endl;
+        cout << "Enter Doctor's gender : ";
+        cin >> gender;
+        cout << endl;
+        cout << "Enter Doctor's age : ";
+        cin >> age;
+        cout << endl;
+        cout << "Enter Doctor's licenseNumber : ";
+        cin >> licenseNumber;
+        cout << endl;
+        cout << "Enter Doctor's specialization : ";
+        cin >> specialization;
+        cout << endl;
+
+        Doctor* d = new Doctor(name, specialization, licenseNumber, age, gender);
+        doctors[name] = d;
+
+        // Save doctor data to file
+        ofstream doctorFile("doctors.txt", ios::app);
+        doctorFile << name << " " << gender << " " << age << " " << licenseNumber << " " << specialization << endl;
+        doctorFile.close();
+    }
+
+    void addPatient() {
+        string n;
+        string dis;
+        string g;
+        int a;
+
+        cout << "Enter Patient's Name: ";
+        cin >> n;
+        cout << endl;
+        cout << "Enter Patient's Disease: ";
+        cin >> dis;
+        cout << endl;
+        cout << "Enter Patient's Gender: ";
+        cin >> g;
+        cout << endl;
+        cout << "Enter Patient's Age: ";
+        cin >> a;
+        cout << endl;
+
+        Patient* p = new Patient(pi, n, dis, g, a);
+        patients[pi] = p;
+        pi++;
+
+        cout << "Select doctor name to take an appointment from: " << endl;
+        for (auto i : doctors) {
+            cout << i.second->name << " " << i.second->specialization << endl;
+        }
+        string selDoc;
+        cin >> selDoc;
+        app[p] = selDoc;
+
+        Doctor* selectedDoctor = doctors[selDoc];
+        docapp[selectedDoctor].push_back(p);
+
+        cout << endl << endl << "Congratulations Appointment Booked : " << endl;
+        cout << "Here is the information for your appointment : " << endl << endl;
+
+        cout << "Patient Name : " << p->name << endl;
+        cout << "Assigned Patient ID : " << p->patientID << endl;
+        cout << "Doctor's Name : " << selDoc << endl << endl << endl;
+
+        // Save patient data to file
+        ofstream patientFile("patients.txt", ios::app);
+        patientFile << p->patientID << " " << p->name << " " << p->gender << " " << p->age << " " << p->disease << " " << selDoc << endl;
+        patientFile.close();
+    }
+
+    void printDocInfo() {
+        for (auto i : doctors) {
+            cout << "Doctor Name : " << i.second->name << endl;
+            cout << "Doctor Gender : " << i.second->gender << endl;
+            cout << "Doctor Age : " << i.second->age << endl;
+            cout << "Doctor License Number : " << i.second->licenseNumber << endl;
+            cout << "Doctor Specialization : " << i.second->specialization << endl;
+            cout << endl << endl;
+        }
+    }
+
+    void printPatInfo() {
+        for (auto i : patients) {
+            cout << "Patient ID : " << i.first << endl;
+            cout << "Patient Name : " << i.second->name << endl;
+            cout << "Patient Gender : " << i.second->gender << endl;
+            cout << "Patient Age : " << i.second->age << endl;
+            cout << "Patient Disease : " << i.second->disease << endl;
+            cout << "Doctor Appointed : " << app[i.second] << endl;
+            cout << endl << endl;
+        }
+    }
+
+    void getDetailsPat() {
+        cout << "Enter patient ID to get details about the patient" << endl;
+        int i;
+        cin >> i;
+
+        if (patients.find(i) == patients.end()) {
+            cout << "Please Enter a valid patient ID" << endl;
+            return;
+        }
+
+        Patient* req = patients[i];
+
+        cout << "Patient ID : " << i << endl;
+        cout << "Patient Name : " << req->name << endl;
+        cout << "Patient Gender : " << req->gender << endl;
+        cout << "Patient Age : " << req->age << endl;
+        cout << "Patient Disease : " << req->disease << endl;
+        cout << "Doctor Appointed : " << app[req] << endl;
+        cout << endl << endl;
+    }
+
+    void getDetailsDoc() {
+        cout << "Select a doctor to see appointments of :" << endl;
+        for (auto i : doctors) {
+            cout << i.first << endl;
+        }
+        string name;
+        cin >> name;
+
+        if (doctors.find(name) == doctors.end()) {
+            cout << "Please Enter a Valid Name from the list above" << endl;
+        }
+        cout << endl;
+        Doctor* doctor = doctors[name];
+        cout << "Doctor " << name << " has these appointments :" << endl;
+        cout << endl;
+        for (auto i : docapp[doctor]) {
+            cout << "Patient ID : " << i->patientID << "     Patient Name : " << i->name << endl;
+        }
+        cout << endl << endl;
+    }
+};
+
+int main() {
+     // Load doctors' data from file
+    ifstream doctorFile("doctors.txt");
+    string dName, dGender, dLicenseNumber, dSpecialization;
+    int dAge;
+    while (doctorFile >> dName >> dGender >> dAge >> dLicenseNumber >> dSpecialization) {
+        Doctor* d = new Doctor(dName, dSpecialization, dLicenseNumber, dAge, dGender);
+        doctors[dName] = d;
+    }
+    doctorFile.close();
+
+    // Load patients' data from file
+    ifstream patientFile("patients.txt");
+    int pID, pAge;
+    string pName, pGender, pDisease, pDoctor;
+    while (patientFile >> pID >> pName >> pGender >> pAge >> pDisease >> pDoctor) {
+        Patient* p = new Patient(pID, pName, pDisease, pGender, pAge);
+        patients[pID] = p;
+        app[p] = pDoctor;
+        Doctor* selectedDoctor = doctors[pDoctor];
+        docapp[selectedDoctor].push_back(p);
+    }
+    patientFile.close();
+
+    cout << "Welcome to Hospital Management System !!" << endl << endl;
+
+    while (true) {
+
+        cout << "Select from Main Menu:" << endl;
+        cout << "1. Add Doctor" << endl;
+        cout << "2. Add Patient" << endl;
+        cout << "3. Get information about all doctors" << endl;
+        cout << "4. Get information about all patients" << endl;
+        cout << "5. Get details about a particular patient using PID" << endl;
+        cout << "6. Get appointment of a particular doctor" << endl;
+        cout << "7. Exit" << endl;
+
+        int choice;
+        cin >> choice;
+        HospitalManagementSystem* h1 = new HospitalManagementSystem();
+
+        switch (choice) {
+        case 1:
+            h1->addDoctor();
+            break;
+        case 2:
+            h1->addPatient();
+            break;
+        case 7:
+            cout << "Exiting the program. Thank you!" << endl;
+            return 0;
+        case 3:
+            h1->printDocInfo();
+            break;
+        case 4:
+            h1->printPatInfo();
+            break;
+        case 5:
+            h1->getDetailsPat();
+            break;
+        case 6:
+            h1->getDetailsDoc();
+            break;
+        default:
+            cout << "Invalid choice. Please try again." << endl;
+        }
+    }
+
+
+    return 0;
+}
